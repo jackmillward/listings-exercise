@@ -14,6 +14,7 @@
     "require-dev": {
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "^3.0",
+        "laravel/boost": "^2.10",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
@@ -60,7 +61,8 @@
             "@php -r \"if (preg_match('/^APP_KEY=\\s*(\\r?\\n|$)/m', file_get_contents('.env'))) passthru('php artisan key:generate --ansi --no-interaction');\""
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php artisan boost:update --ansi --no-interaction"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
