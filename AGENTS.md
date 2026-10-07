@@ -34,9 +34,6 @@ All three must pass before a change is done. A change that cannot pass one of th
 3. **Leave no debugging leftovers** — `dd`, `dump`, `ray`, commented-out code.
 4. **Don't commit** `.env`, `vendor/`, `node_modules/`, `public/build`, or
    `database/database.sqlite`. Don't commit at all unless asked.
-5. **Write decisions down.** Any product judgement call — an edge case, a trade-off, something
-   deliberately left out — belongs in a code comment if it's local, and in `NOTES.md` if it's
-   user-visible.
 
 ## Standards
 
@@ -72,7 +69,7 @@ Applies across PHP, Vue and CSS.
 - **Eloquent scopes** for reusable query constraints (`Listing::query()->live()`), so every caller
   shares one definition of a concept.
 - **Use `?->`** wherever a value can legitimately be null (`listed_at` is nullable until a listing
-  goes live).
+  goes live). Do not use it to hide errors.
 - **Migrations** are anonymous classes returning `Migration` with `up()`/`down()`, `down()` uses
   `dropIfExists`, and every column you filter or order by gets an index — with a comment saying why.
 - **Middleware** is registered in `bootstrap/app.php`; there is no `app/Http/Kernel.php`.
@@ -133,16 +130,11 @@ Applies across PHP, Vue and CSS.
 - **There's no front-end test runner.** Front-end behaviour is covered indirectly through props and
   the query-string contract in feature tests. Don't add a JS test framework without saying so.
 
-===
-
-<laravel-boost-guidelines>
-=== foundation rules ===
-
 # Laravel Boost Guidelines
 
 ## Foundational Context
 
-This application is a Laravel application running on PHP 8.5. Always use the APIs that match the installed major version of each package — do not assume a version.
+This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
@@ -174,8 +166,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ## Documentation Files
 
 - You must only create documentation files if explicitly requested by the user.
-
-=== boost rules ===
 
 # Laravel Boost
 
@@ -217,8 +207,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
   - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
-=== php rules ===
-
 # PHP
 
 - Always use curly braces for control structures, even for single-line bodies.
@@ -228,15 +216,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
 
-=== deployments rules ===
-
-# Deployment
-
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
-
-=== tests rules ===
-
 # Test Enforcement
 
 - Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
@@ -244,8 +223,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - When test coverage applies, run the affected tests and ensure they pass.
 - Test the changed behavior and its important failure modes, but do not add tests beyond them.
 - Read the `testing-best-practices` skill before writing tests.
-
-=== inertia-laravel/core rules ===
 
 # Inertia
 
@@ -267,8 +244,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Event renames: `invalid` is now `httpException`, `exception` is now `networkError`.
 - `router.cancel()` replaced by `router.cancelAll()`.
 - The `future` configuration namespace has been removed - all v2 future options are now always enabled.
-
-=== laravel/core rules ===
 
 # Do Things the Laravel Way
 
@@ -294,14 +269,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
 - When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
-=== pint/core rules ===
-
 # Laravel Pint Code Formatter
 
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
-
-=== phpunit/core rules ===
 
 # PHPUnit
 
@@ -315,11 +286,8 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Rerun a test after each change to it.
 - Run `vendor/bin/phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
-=== inertia-vue/core rules ===
-
 # Inertia + Vue
 
 Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
-</laravel-boost-guidelines>
