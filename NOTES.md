@@ -14,6 +14,7 @@ My first thing is to move all the logic out of the controllers and into a servic
 focus on receiving a request, triggering some logic and then handling the response based on what happens. 
 
 ### Deciding
+#### Schema
 For the saved search schema, I decided to make a name nullable. I might want to name my specific search but then I might not
 want to provide a name if I'm just doing a specific search, so we can piece together a "name" on the frontend with the search criteria.
 
@@ -22,6 +23,8 @@ there's no set schema, not to mention how differently MySQL/SQLite/Postgres can 
 It's flexible but you'd need to consider versioning it and always making sure the frontend works with
 very old JSON saved searches. I reckon using columns is the lesser evil here, it means we can query properly, we have a set schema
 and can just add new columns. Will make indexing a bit of a pain on anything but `id` and `user_id`.
+
+#### Notification
 
 Seeing the support note about spamming users, I decided to reject creating a duplicate saved search if they accidentally set up
 identical alerts. Keeps the database a bit neater and makes sure there's less mess for the user to clear up on their screen so they don't have to delete their duplicates.
@@ -35,8 +38,6 @@ Initially I wanted to do what the user requested and send it for both but I can 
 make sure that a user is only notified about a property once and whichever saved search picks it up.
 If we had a place on the website to view matching properties on a saved search, it'd show up in either of the ones they're viewing anyways. This is solely to avoid spam.
 
-One major thing to consider for this entire feature is later if we decided to stagger sending multiple matching properties in one email.
-
 I've decided to use a model observer for the Listing model that'll get fired when a Listing goes live. It stops us from having to
 remember to trigger it whenever we set a Listing live and we can hook into it quite nicely in future. Also means we can fire off
 a bunch of relevant listeners for the model if we extended this to other features "DoXAfterListingLive"
@@ -46,7 +47,7 @@ drivers it uses. It's more of an interface for a notification and can be an emai
 and we don't have to rewrite it or write `SavedSearchNotifyDB`, `SavedSearchNotifyEmail` classes. Love these.
 I've just created a `notifications` table for now but in production it'd be running through Horizon or some queue worker.
 
-### Seeing an alert fire
+### Testing the feature
 If you want to give it a quick test to see the alert come through:
 
 A saved search has to exist, and a listing has to *become* live while matching it. Creating a listing as live doesn't count
@@ -81,9 +82,10 @@ php artisan tinker --execute 'App\Models\ListingAlert::query()->delete(); DB::ta
 
 ### Additional considerations
 - I'd make it so customers can edit their saved searches. If I was a customer I'd feel a bit annoyed if I had to start from scratch every time if I wanted to just slightly tweak the price range or area.
-- I wouldn't write a backfill for this feature. Once it's live then it'll go from there, wouldn't want to risk spamming customers with complex commands that check previous alerts.
+- I wouldn't write a backfill for this feature, at least not without input from the projects team to understand how wide we want to cast this net especially with customer emails. Once it's live then it'll go from there, wouldn't want to risk spamming customers with complex commands that check previous alerts.
 - On the notifications() relationship I'd get some form of pagination so we're limiting the response at scale.
 - The notification itself should have an `implements ShouldQueue` for later once it's plugged up to a queue worker so it can be managed properly, jobs retried if they fail etc... .
 - The alerts unread badge is nice but will be on every page so will be requested a bit at scale. I'd probably keep this updated via a websocket channel if we wanted to be really fancy.
 - I'd properly abstract out the SavedSearchService so we can make a V2 of it if we need to and switch the implementation out if we did a new version or replacement using an interface. Uses dependency injection that way
 - We'd also obviously need a way of changing listings from 'draft' to 'live' for the observer to ever fire
+- One major thing to consider for this entire feature is later if we decided to stagger sending multiple matching properties in one email.
