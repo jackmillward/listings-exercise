@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ListingStatus;
 use App\Enums\PropertyType;
+use App\Search\SearchCriteria;
 use Database\Factories\ListingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -81,5 +82,29 @@ class Listing extends Model
     public function scopeLive(Builder $query): void
     {
         $query->where('status', ListingStatus::Live);
+    }
+
+    /**
+     * @param  Builder<Listing>  $query
+     */
+    public function scopeMatching(Builder $query, SearchCriteria $criteria): void
+    {
+        $query
+            ->when(
+                $criteria->propertyType !== null,
+                fn (Builder $query) => $query->where('property_type', $criteria->propertyType->value)
+            )
+            ->when(
+                $criteria->maxPrice !== null,
+                fn (Builder $query) => $query->where('price', '<=', $criteria->maxPrice)
+            )
+            ->when(
+                $criteria->minBedrooms !== null,
+                fn (Builder $query) => $query->where('bedrooms', '>=', $criteria->minBedrooms)
+            )
+            ->when(
+                $criteria->region !== null,
+                fn (Builder $query) => $query->whereHas('branch', fn (Builder $branchQuery) => $branchQuery->where('region', $criteria->region))
+            );
     }
 }

@@ -7,52 +7,38 @@ use App\Enums\PropertyType;
 use App\Http\Requests\ListingIndexRequest;
 use App\Http\Resources\BranchResource;
 use App\Http\Resources\ListingResource;
-use App\Models\Branch;
 use App\Models\Listing;
+use App\Search\ListingService;
+use App\Search\SearchCriteria;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ListingController extends Controller
 {
+    public function __construct(private readonly ListingService $listings) {}
+
     /**
      * List live listings, with optional filters.
      */
     public function index(ListingIndexRequest $request): Response
     {
-        $query = Listing::query()->live();
-
-        if ($request->filled('property_type')) {
-            $query->where('property_type', $request->string('property_type'));
-        }
-
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->integer('max_price'));
-        }
-
-        if ($request->filled('min_bedrooms')) {
-            $query->where('bedrooms', '>=', $request->integer('min_bedrooms'));
-        }
-
-        if ($request->filled('region')) {
-            $region = $request->string('region');
-            $query->whereHas('branch', function ($branchQuery) use ($region) {
-                $branchQuery->where('region', $region);
-            });
-        }
-
-        // `id` is a tiebreaker: without it, listings sharing a `listed_at` can be
-        // ordered differently between page requests, which duplicates or skips
-        // rows as you page through.
-        $listings = $query->latest('listed_at')
-            ->orderByDesc('id')
-            ->paginate($request->integer('per_page', 15))
-            ->withQueryString();
+        $criteria = SearchCriteria::fromArray($request->only(
+            'property_type',
+            'max_price',
+            'min_bedrooms',
+            'region',
+        ));
 
         return Inertia::render('Listings/Index', [
-            'listings' => ListingResource::collection($listings),
-            'branches' => BranchResource::collection(Branch::query()->orderBy('name')->get()),
+            'listings' => ListingResource::collection(
+                $this->listings->liveListingsMatching($criteria, $request->integer('per_page', 15))
+            ),
+            'branches' => BranchResource::collection($this->listings->branches()),
             'propertyTypes' => PropertyType::options(),
+            // Echoed back exactly as sent so the filter form re-seeds itself,
+            // rather than the normalised values the query was built from.
             'filters' => $request->only('property_type', 'max_price', 'min_bedrooms', 'region'),
+            'saveSearchUrl' => $this->listings->saveSearchUrl($criteria),
         ]);
     }
 

@@ -6,6 +6,11 @@ const props = defineProps({
     branches: { type: Array, required: true },
     propertyTypes: { type: Array, required: true },
     processing: { type: Boolean, default: false },
+    // The create page already owns a <form> around this component. Rendering a
+    // second one nests them, and a nested form's submit event still bubbles to
+    // the outer form, so one click would fire both handlers.
+    inline: { type: Boolean, default: false },
+    errors: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:modelValue', 'submit', 'reset']);
@@ -26,7 +31,8 @@ const fieldClasses =
 </script>
 
 <template>
-    <form
+    <component
+        :is="inline ? 'div' : 'form'"
         class="mb-6 flex flex-wrap items-end gap-3"
         @submit.prevent="emit('submit')"
     >
@@ -36,6 +42,7 @@ const fieldClasses =
                 id="property_type"
                 :value="modelValue.property_type"
                 :class="fieldClasses"
+                :aria-invalid="Boolean(errors?.property_type)"
                 @change="update('property_type', $event.target.value)"
             >
                 <option value="">Any type</option>
@@ -43,6 +50,9 @@ const fieldClasses =
                     {{ type.label }}
                 </option>
             </select>
+            <p v-if="errors?.property_type" class="text-xs text-red-700" role="alert">
+                {{ errors.property_type }}
+            </p>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -51,6 +61,7 @@ const fieldClasses =
                 id="region"
                 :value="modelValue.region"
                 :class="fieldClasses"
+                :aria-invalid="Boolean(errors?.region)"
                 @change="update('region', $event.target.value)"
             >
                 <option value="">Any area</option>
@@ -58,6 +69,9 @@ const fieldClasses =
                     {{ region }}
                 </option>
             </select>
+            <p v-if="errors?.region" class="text-xs text-red-700" role="alert">
+                {{ errors.region }}
+            </p>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -70,8 +84,12 @@ const fieldClasses =
                 max="20"
                 placeholder="Any"
                 :class="[fieldClasses, 'w-28']"
+                :aria-invalid="Boolean(errors?.min_bedrooms)"
                 @input="update('min_bedrooms', $event.target.value)"
             />
+            <p v-if="errors?.min_bedrooms" class="text-xs text-red-700" role="alert">
+                {{ errors.min_bedrooms }}
+            </p>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -84,14 +102,20 @@ const fieldClasses =
                 step="10000"
                 placeholder="Any"
                 :class="[fieldClasses, 'w-36']"
+                :aria-invalid="Boolean(errors?.max_price)"
                 @input="update('max_price', $event.target.value)"
             />
+            <p v-if="errors?.max_price" class="text-xs text-red-700" role="alert">
+                {{ errors.max_price }}
+            </p>
         </div>
 
+        <!-- Inline there is no wrapping form, so the button has to emit directly. -->
         <button
-            type="submit"
+            :type="inline ? 'button' : 'submit'"
             :disabled="processing"
             class="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
+            @click="inline && emit('submit')"
         >
             Search
         </button>
@@ -104,5 +128,7 @@ const fieldClasses =
         >
             Clear
         </button>
-    </form>
+
+        <slot />
+    </component>
 </template>

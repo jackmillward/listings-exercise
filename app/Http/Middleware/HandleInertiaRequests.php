@@ -2,11 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Search\AlertService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private readonly AlertService $alerts) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -40,6 +43,19 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user()?->only('id', 'name', 'email'),
             ],
+            'flash' => $request->session()->get('status'),
+            'unreadAlertsCount' => $this->unreadAlertsCount($request),
         ];
+    }
+
+    /**
+     * Shared so the nav badge is correct on every page rather than only the one
+     * that happens to query for it.
+     */
+    private function unreadAlertsCount(Request $request): int
+    {
+        $user = $request->user();
+
+        return $user === null ? 0 : $this->alerts->unreadCountFor($user);
     }
 }
