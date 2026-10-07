@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '../../components/AppLayout.vue';
 import ListingCard from '../../components/ListingCard.vue';
 import ListingFilters from '../../components/ListingFilters.vue';
@@ -11,9 +11,14 @@ const props = defineProps({
     branches: { type: Array, required: true },
     propertyTypes: { type: Array, required: true },
     filters: { type: Object, required: true },
+    saveSearchUrl: { type: String, required: true },
 });
 
 const processing = ref(false);
+
+// An empty search matches every listing, and saving one would alert on all of
+// them, so there is nothing to save until a filter is set.
+const hasFilters = computed(() => Object.values(props.filters).some(Boolean));
 
 // Seeded from the server so the filter form survives a refresh, a shared link
 // or the back button — the query string is the single source of truth.
@@ -58,7 +63,27 @@ function reset() {
             :processing="processing"
             @submit="search"
             @reset="reset"
-        />
+        >
+            <template v-if="hasFilters">
+                <Link
+                    :href="saveSearchUrl"
+                    class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                >
+                    <span aria-hidden="true">🔔</span>
+                    Save this search
+                </Link>
+            </template>
+            <button
+                v-else
+                type="button"
+                disabled
+                title="Add some filters first — a search with no filters would alert you about every listing."
+                class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-400"
+            >
+                <span aria-hidden="true">🔔</span>
+                Save this search
+            </button>
+        </ListingFilters>
 
         <p class="mb-4 text-sm text-slate-500" aria-live="polite">
             <span v-if="processing">Loading…</span>
